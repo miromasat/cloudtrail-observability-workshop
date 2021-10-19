@@ -1,0 +1,39 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: |
+  This is work in progress. This CF Template builds an Encrypted Amazon S3 Bucket and then AWS EventBridge Rules as well as AWS Config Rules to watch this S3 Bucket for changes in enabling/disabling Encryption. Furthermore this creates a Amazon SNS Notification and an Email Supscription so that we can test the functionality of it.
+Parameters:
+  EmailAddressForNotification:
+    Type: String
+    Default: your@mail.com
+Resources:
+  S3bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+  SNStopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: "EncryptionDisabled"
+      Subscription: !Ref "SNSsubscription"
+      TopicName: "EncryptionDisabled"
+  SNSsubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint: !Ref "EmailAddressForNotification"
+      Protocol: email
+      TopicArn: !Ref "SNSTopic"
+  LogicalID:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: "EncryptionDisabled"
+      EventPattern: JSON
+      Name: "EncryptionDisabled"
+      State: "String"
+      Targets:
+        Arn: !Ref "SNSTopic"
+Transform:
+
+Outputs:
