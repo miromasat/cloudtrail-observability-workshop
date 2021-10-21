@@ -34,6 +34,5 @@ Resources:
       State: "String"
       Targets:
         Arn: !Ref "SNSTopic"
-Transform:
 
 Outputs:
