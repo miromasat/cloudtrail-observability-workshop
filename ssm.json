@@ -1,0 +1,47 @@
+{
+    "schemaVersion": "0.3",
+    "description": "Enables KMS Encryption on S3 Bucket.",
+    "assumeRole": "{{ AutomationAssumeRole }}",
+    "parameters": {
+        "BucketName": {
+            "type": "String",
+            "description": "(Required) The name of the S3 Bucket whose content will be encrypted.",
+        },
+        "SSEAlgorithm": {
+            "type": "String",
+            "description": "(Optional) Server-side encryption algorithm to use for the default encryption.",
+            "default": "AES256"
+        },
+        "AutomationAssumeRole": {
+            "type": "String",
+            "description": "(Optional) The ARN of the role that allows Automation to perform the actions on your behalf.",
+            "default": ""
+        },
+        "KMSKeyID": {
+            "type": "String",
+            "description": "(Optional) The ARN of the KMS key that should be used.",
+            "default": ""
+        }
+    },
+    "mainSteps": [
+        {
+            "action": "aws:executeAwsApi",
+            "name": "PutBucketEncryption",
+            "inputs": {
+                "Service": "s3",
+                "Api": "PutBucketEncryption",
+                "Bucket": "{{ BucketName }}",
+                "ServerSideEncryptionConfiguration": {
+                    "Rules": [
+                        {
+                            "ApplyServerSideEncryptionByDefault": {
+                                "SSEAlgorithm": "{{ SSEAlgorithm }}",
+                                "KMSMasterKeyID": "{{ KMSKeyID }}"
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}
