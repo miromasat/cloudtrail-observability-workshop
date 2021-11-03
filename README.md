@@ -1,7 +1,8 @@
 # AWS Cloudtrail Workshop 2021:
-This small workshop walks a customer through the ability to alert on specific events that AWS CloudTrail records and then evaluate and respond to these in two ways:
+This small workshop walks a customer through the ability to alert on specific events that AWS CloudTrail records and then evaluate and respond to these in three ways:
 1. Capture AWS Resource *Change* through AWS EventBridge and notify via AWS SNS Email Notification
 2. Capture AWS Resource *State* through AWS Config and remediate via AWS Systems Manager Document
+3. Capture AWS Resource *History* through Amazon S3, query this information via Amazon Athena and visualize the data in a dashboard using Amazon QuickSight.
 
 ## Architectural Diagram:
 ![Architectural Diagram](/cloudtrail-workshop-2021.jpg)
@@ -18,15 +19,16 @@ This small workshop walks a customer through the ability to alert on specific ev
 6. Open AWS Config Console. If you open AWS Config for the fist time, click on `1-click set-up`. Then click on `Rules` and `Add Rule`. In the wizard, search for `s3-default-encryption-kms` from AWS Managed Rules. Click Next. On the next screen, name sure to set Resource Identifier to only specific bucket name that you created in the step 2. Once the rule is done, click on Rule `Actions` and `Re-evaluate`. This should yield `Compliant` status as this particular bucket is encrypted. <details>![Config Rule Configuration](/step6.png)</details> 
 7. Navigate to AWS Systems Manager Service, in the left menu, click on `Documents` tab. Next-up, click on `Create Document` dropdown and pick `Automation` document option. You can choose a name for your document, but we can use `My-EnableS3BucketEncryption` (Notice, there is also a Document, called `AWS-EnableS3BucketEncryption`, created by AWS, but this Document cannot accept the specific KMS Key we want to use to encrypt our bucket). We could use `Builder` to create this document step-by-step, instead, we can use `Editor` tab, where we click on edit and paste content of the attached [ssm.json](/ssm.json) file. Finally, we click on `Create automation` button.
 8. Now we will retrieve the key from `AWS Key Management Service`. After navigating to the service, we click on `AWS managed keys` in the left panel and note `Key ID` parameter for aws/s3 Alias. It will be in the format like this: 	`9876zyx-0000-1234-5678-aaabbbcccddd`.
-8. In AWS Config Console, click on `Rules` in the left panel, then click on `s3-default-encryption-kms` Rule we created in the step 6. Once we are in the detail screen of the AWS COnfig RUle, click on `Actions` in top right and pick `Manage remediation` from the dropdown. Pick `Manual remediation` first and as pick `My-EnableS3BucketEncryption` from the dropdown. As Resource ID parameter, pick `BucketName`, change the parameter of `SSEAlgotithm` to `aws:kms` and the parameter `KMSKeyID` to Key ID retrieved in the Step 7. <details>![COnfig RUle Remediation Configuration](/step8.png)</details> 
-9. Open AWS CloudShell Console. Now you will try to assume the `Unauthorized` role by execuriting this command: `eval $(aws sts assume-role --role-arn ARN --role-session-name unauthorizedRole | jq -r '.Credentials | "export AWS_ACCESS_KEY_ID=\(.AccessKeyId)\nexport AWS_SECRET_ACCESS_KEY=\(.SecretAccessKey)\nexport AWS_SESSION_TOKEN=\(.SessionToken)\n"')`
+9. In AWS Config Console, click on `Rules` in the left panel, then click on `s3-default-encryption-kms` Rule we created in the step 6. Once we are in the detail screen of the AWS COnfig RUle, click on `Actions` in top right and pick `Manage remediation` from the dropdown. Pick `Manual remediation` first and as pick `My-EnableS3BucketEncryption` from the dropdown. As Resource ID parameter, pick `BucketName`, change the parameter of `SSEAlgotithm` to `aws:kms` and the parameter `KMSKeyID` to Key ID retrieved in the Step 7. <details>![COnfig RUle Remediation Configuration](/step8.png)</details> 
+10. Open AWS CloudShell Console. Now you will try to assume the `Unauthorized` role by execuriting this command: `eval $(aws sts assume-role --role-arn ARN --role-session-name unauthorizedRole | jq -r '.Credentials | "export AWS_ACCESS_KEY_ID=\(.AccessKeyId)\nexport AWS_SECRET_ACCESS_KEY=\(.SecretAccessKey)\nexport AWS_SESSION_TOKEN=\(.SessionToken)\n"')`
     - once this role is assumed, let's verify the `assume-role` call by calling `aws sts get-caller-identity`, we should observe that now we act as unauthorized role we created. 
     - now, we will try to turn-off the encryption on the S3 bucket, let's try running  `aws s3 delete-bucket-encryption --bucket ARN`
     - what has happened? are we notified? can we see any change on our AWS Config Dashboard?
-10. Now you will try to assume the `Authorized` role by execuriting this command: `eval $(aws sts assume-role --role-arn ARN --role-session-name unauthorizedRole | jq -r '.Credentials | "export AWS_ACCESS_KEY_ID=\(.AccessKeyId)\nexport AWS_SECRET_ACCESS_KEY=\(.SecretAccessKey)\nexport AWS_SESSION_TOKEN=\(.SessionToken)\n"')`
+11. Now you will try to assume the `Authorized` role by execuriting this command: `eval $(aws sts assume-role --role-arn ARN --role-session-name unauthorizedRole | jq -r '.Credentials | "export AWS_ACCESS_KEY_ID=\(.AccessKeyId)\nexport AWS_SECRET_ACCESS_KEY=\(.SecretAccessKey)\nexport AWS_SESSION_TOKEN=\(.SessionToken)\n"')`
     - once this role is assumed, let's verify the `assume-role` call by calling `aws sts get-caller-identity`, we should observe that now we act as unauthorized role we created. 
     - now, we will try to turn-off the encryption on the S3 bucket, let's try running  `aws s3 delete-bucket-encryption --bucket ARN`
     - what has happened? are we notified? can we see any change on our AWS Config Dashboard?
+12. Steps for Amazon Athena and Amazon Quicksight are coming soon...
 
 
 ## Shortcut
